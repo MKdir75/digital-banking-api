@@ -1,0 +1,39 @@
+
+name: Deploy Django Application
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+          script: |
+            set -e
+
+            cd ~/digital-banking-api
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building and starting containers..."
+            docker compose up -d --build
+
+            echo "Running database migrations..."
+            docker compose exec -T web python manage.py migrate --noinput
+
+            echo "Checking containers..."
+            docker compose ps

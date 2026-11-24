@@ -1,0 +1,69 @@
+
+services:
+
+  db:
+    image: postgres:16
+    container_name: digital-banking-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: digital_banking
+      POSTGRES_USER: banking_user
+      POSTGRES_PASSWORD: banking_password
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U banking_user -d digital_banking
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - banking-network
+
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: digital-banking-api
+    restart: unless-stopped
+
+    command: >
+      sh -c "python manage.py migrate &&
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers 3"
+
+    env_file:
+      - .env
+
+    volumes:
+      - .:/app
+
+    environment:
+      DATABASE_URL: postgresql://banking_user:banking_password@db:5432/digital_banking
+
+    ports:
+      - "8001:8000"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - banking-network
+
+
+volumes:
+  postgres_data:
+
+
+networks:
+  banking-network:
+    driver: bridge
