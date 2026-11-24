@@ -148,3 +148,11 @@ def test_unauthenticated_customer_cannot_view_profile():
     )
 
     assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_user_string_representation_returns_email():
+
+    user = UserFactory()
+
+    assert str(user) == user.email

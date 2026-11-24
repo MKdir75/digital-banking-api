@@ -271,3 +271,35 @@ def test_deposit_rejects_same_key_with_different_reference():
         account=account,
         idempotency_key="reference-conflict",
     ).count() == 1
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "idempotency_key",
+    [
+        "",
+        None,
+        "a" * 101,
+    ],
+)
+def test_deposit_rejects_invalid_idempotency_key(idempotency_key):
+
+    user = UserFactory()
+
+    account = BankAccount.objects.create(
+        owner=user,
+        balance=Decimal("500.00"),
+    )
+
+    with pytest.raises(ValidationError):
+        deposit_funds(
+            actor=user,
+            account_id=account.pk,
+            amount="50.00",
+            idempotency_key=idempotency_key,
+        )
+
+    account.refresh_from_db()
+
+    assert account.balance == Decimal("500.00")
+    assert Deposit.objects.count() == 0

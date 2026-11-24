@@ -462,3 +462,28 @@ def test_transfer_rejects_same_idempotency_key_with_different_amount():
         sender=sender,
         idempotency_key="conflicting-key"
     ).count() == 1
+
+
+@pytest.mark.django_db
+def test_transfer_rejects_transfer_to_same_account():
+
+    user = UserFactory()
+
+    account = BankAccount.objects.create(
+        owner=user,
+        balance=Decimal("100.00"),
+    )
+
+    with pytest.raises(ValidationError):
+        transfer_funds(
+            actor=user,
+            sender_id=account.pk,
+            receiver_account_number=account.account_number,
+            amount="10.00",
+            idempotency_key="self-transfer-test",
+        )
+
+    account.refresh_from_db()
+
+    assert account.balance == Decimal("100.00")
+    assert Transfer.objects.count() == 0

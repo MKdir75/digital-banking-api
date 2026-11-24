@@ -59,3 +59,14 @@ def test_customer_sees_only_own_accounts():
     assert response.status_code == 200
 
     assert len(response.data) == 1
+
+
+@pytest.mark.django_db
+def test_bank_account_string_representation_returns_account_number():
+
+    account = BankAccount.objects.create(
+        owner=UserFactory(),
+        currency="BDT",
+    )
+
+    assert str(account) == account.account_number
