@@ -30,13 +30,13 @@ jobs:
           echo "Pulling latest code..."
           git pull --ff-only origin main
 
-          echo "Building and starting containers..."
-          sudo -n docker compose up -d --build
+          echo "Building production containers..."
+          sudo -n docker compose -f docker-compose.prod.yml up -d --build
 
           echo "Running database migrations..."
-          sudo -n docker compose exec -T web python manage.py migrate --noinput
+          sudo -n docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate --noinput
 
-          echo "Checking containers..."
-          sudo -n docker compose ps
+          echo "Checking production containers..."
+          sudo -n docker compose -f docker-compose.prod.yml ps
 
-          echo "Deployment completed successfully!"
+          echo "Production deployment completed successfully!"
